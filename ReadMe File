@@ -1,0 +1,175 @@
+To interact with an Oracle database using a JSON API in Java, you can make use of the Oracle JDBC driver and create a simple REST API that serves JSON data. Here’s an example of a Java code snippet to achieve this.
+
+We’ll assume you're using a framework like **Spring Boot** to create a REST API, and you're using **Oracle JDBC** to connect to the Oracle DB and retrieve data.
+
+1. **Set up Maven dependencies** for Oracle JDBC and Spring Boot.
+
+Add the following dependencies in your `pom.xml` file:
+
+```xml
+<dependencies>
+    <!-- Spring Boot Starter Web for REST API -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Oracle JDBC dependency -->
+    <dependency>
+        <groupId>com.oracle.database.jdbc</groupId>
+        <artifactId>ojdbc8</artifactId>
+        <version>19.8.0.0</version>
+    </dependency>
+
+    <!-- Spring Boot Starter Data JPA (optional, for ORM) -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+
+    <!-- Spring Boot Starter Test (optional, for testing) -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+```
+
+2. **Create a Spring Boot Application** to expose a REST API that fetches data from the Oracle DB and returns it as JSON.
+
+Here’s the code for connecting to Oracle DB and creating a simple REST endpoint:
+
+**Application.java**
+
+```java
+package com.example.demo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+```
+
+**DatabaseService.java**
+
+```java
+package com.example.demo;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class DatabaseService {
+
+    @Value("${spring.datasource.url}")
+    private String dbUrl;
+
+    @Value("${spring.datasource.username}")
+    private String dbUsername;
+
+    @Value("${spring.datasource.password}")
+    private String dbPassword;
+
+    public List<String> getDataFromDatabase() {
+        List<String> data = new ArrayList<>();
+        try {
+            // Load the Oracle JDBC driver
+            Class.forName("oracle.jdbc.driver.OracleDriver");
+
+            // Establish the connection to the Oracle DB
+            Connection connection = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+
+            // Execute a query to fetch data
+            Statement stmt = connection.createStatement();
+            String sql = "SELECT column_name FROM table_name"; // Update with your query
+            ResultSet rs = stmt.executeQuery(sql);
+
+            // Process the result
+            while (rs.next()) {
+                data.add(rs.getString("column_name")); // Update with your column name
+            }
+
+            rs.close();
+            stmt.close();
+            connection.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return data;
+    }
+}
+```
+
+**DatabaseController.java**
+
+```java
+package com.example.demo;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+public class DatabaseController {
+
+    @Autowired
+    private DatabaseService databaseService;
+
+    @GetMapping("/data")
+    public List<String> getData() {
+        return databaseService.getDataFromDatabase();
+    }
+}
+```
+
+3. **Configure the database connection** by adding the following settings in the `application.properties` file:
+
+**application.properties**
+
+```properties
+spring.datasource.url=jdbc:oracle:thin:@localhost:1521:xe  # Update with your Oracle DB URL
+spring.datasource.username=your_username
+spring.datasource.password=your_password
+spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
+spring.datasource.jpa.hibernate.ddl-auto=update
+spring.datasource.jpa.properties.hibernate.dialect=org.hibernate.dialect.Oracle12cDialect
+```
+
+4. **Run the application**:
+   - The Spring Boot application will start a REST API.
+   - You can access the `/data` endpoint to retrieve data from the Oracle database in JSON format.
+
+**Example Response**:
+
+```json
+[
+    "Row1 Data",
+    "Row2 Data",
+    "Row3 Data"
+]
+```
+
+---
+
+### Notes:
+- Replace `table_name` and `column_name` in the `DatabaseService` with the actual table and column names from your Oracle database.
+- The example assumes you're using Spring Boot to expose a REST API, but you can adapt it to any other framework or plain Java based on your needs.
+- Oracle’s JDBC driver `ojdbc8` must be available in your classpath for the connection to work. You can download it from the Oracle website or use Maven to fetch it.
+
+This will give you a JSON API to interact with an Oracle database using Java. Let me know if you need further modifications!
