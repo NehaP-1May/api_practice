@@ -51,3 +51,8 @@ public class DatabaseService {
         return data;
     }
 }
+
+//- Replace `table_name` and `column_name` in the `DatabaseService` with the actual table and column names from your Oracle database.
+
+
+
